@@ -72,7 +72,7 @@ impl Display {
         cb: glutin::ContextBuilder<'_, T>,
         events_loop: &glutin::event_loop::EventLoopWindowTarget<E>,
     ) -> Result<Self, DisplayCreationError> {
-        let gl_window = cb.build_windowed(handle)?;
+        let gl_window = cb.build_windowed(handle, (1280,720))?;
         Self::from_gl_window(gl_window).map_err(From::from)
     }
 
@@ -143,7 +143,7 @@ impl Display {
         let new_gl_window = {
             let gl_window = self.gl_window.borrow();
             let cb = cb.with_shared_lists(&gl_window);
-            cb.build_windowed(handle)?
+            cb.build_windowed(handle, (1280,720))?
         };
         let new_gl_window = unsafe { new_gl_window.treat_as_current() };
 
