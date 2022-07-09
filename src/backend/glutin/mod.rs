@@ -73,8 +73,11 @@ impl Display {
         cb: glutin::ContextBuilder<'_, T>,
         events_loop: &glutin::event_loop::EventLoopWindowTarget<E>,
     ) -> Result<Self, DisplayCreationError> {
+        panic!("Display::new disabled");
+        /* 
         let gl_window = cb.build_windowed(wb, events_loop)?;
         Self::from_gl_window(gl_window).map_err(From::from)
+        */
     }
 
     /// Create a new glium `Display`.
@@ -140,6 +143,8 @@ impl Display {
         cb: glutin::ContextBuilder<'_, T>,
         events_loop: &glutin::event_loop::EventLoop<()>,
     ) -> Result<(), DisplayCreationError> {
+        panic!("Display::rebuild disabled");
+        /* 
         // Share the display lists of the existing context.
         let new_gl_window = {
             let gl_window = self.gl_window.borrow();
@@ -159,6 +164,7 @@ impl Display {
         unsafe { self.context.rebuild(backend) }?;
 
         Ok(())
+        */
     }
 
     /// Borrow the inner glutin WindowedContext.

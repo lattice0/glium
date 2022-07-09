@@ -11,7 +11,7 @@ use std::ops::Deref;
 use std::os::raw::c_void;
 use std::rc::Rc;
 use takeable_option::Takeable;
-
+use ndk::surface_texture::SurfaceTexture;
 /// A SurfaceBacked glutin context.
 pub struct SurfaceBacked {
     context: Rc<context::Context>,
@@ -20,9 +20,10 @@ pub struct SurfaceBacked {
 }
 
 /// An implementation of the `Backend` trait for a glutin SurfaceBacked context.
+#[derive(Clone)]
 pub struct GlutinBackend {
     glutin_context: Rc<RefCell<Takeable<glutin::Context<Pc>>>>,
-    surface_texture: SurfaceTexture,
+    surface_texture: Rc<RefCell<SurfaceTexture>>,
     texture_id: u32,
 }
 
@@ -33,12 +34,14 @@ impl Deref for SurfaceBacked {
     }
 }
 
+/*
 impl Deref for GlutinBackend {
     type Target = Rc<RefCell<Takeable<glutin::Context<Pc>>>>;
     fn deref(&self) -> &Self::Target {
         &self.0
     }
 }
+*/
 
 unsafe impl Backend for GlutinBackend {
     #[inline]
@@ -48,7 +51,7 @@ unsafe impl Backend for GlutinBackend {
 
     #[inline]
     unsafe fn get_proc_address(&self, symbol: &str) -> *const c_void {
-        self.0.borrow().get_proc_address(symbol) as *const _
+        self.glutin_context.borrow().get_proc_address(symbol) as *const _
     }
 
     #[inline]
@@ -58,16 +61,16 @@ unsafe impl Backend for GlutinBackend {
 
     #[inline]
     fn is_current(&self) -> bool {
-        self.0.borrow().is_current()
+        self.glutin_context.borrow().is_current()
     }
 
     #[inline]
     unsafe fn make_current(&self) {
-        let mut gl_window_takeable = self.0.borrow_mut();
+        let mut gl_window_takeable = self.glutin_context.borrow_mut();
         let gl_window = Takeable::take(&mut gl_window_takeable);
         let gl_window_new = gl_window.make_current().unwrap();
         Takeable::insert(&mut gl_window_takeable, gl_window_new);
-        self.surface_texture.attach_to_gl_context(self.texture_id);
+        self.surface_texture.borrow().attach_to_gl_context(self.texture_id);
     }
 }
 
@@ -134,19 +137,19 @@ impl SurfaceBacked {
         let glutin_context = Rc::new(RefCell::new(Takeable::new(context)));
         let glutin_backend = GlutinBackend {
             glutin_context: glutin_context.clone(),
-            surface_texture,
+            surface_texture: Rc::new(RefCell::new(surface_texture)),
             texture_id,
         };
-        let context = unsafe { context::Context::new(glutin_backend, checked, debug) }?;
+        let context = unsafe { context::Context::new(glutin_backend.clone(), checked, debug) }?;
         Ok(SurfaceBacked {
             context,
-            glutin: glutin_context,
+            glutin: glutin_backend,
         })
     }
 
     /// Borrow the inner glutin context
     pub fn gl_context(&self) -> Ref<'_, impl Deref<Target = glutin::Context<Pc>>> {
-        self.glutin.borrow()
+        self.glutin.glutin_context.borrow()
     }
 
     /// Start drawing on the backbuffer.
