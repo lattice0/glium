@@ -11,6 +11,7 @@ Only available if the 'glutin' feature is enabled.
 pub use glutin;
 
 pub mod headless;
+pub mod android_surface_texture;
 
 use crate::backend;
 use crate::backend::Backend;
